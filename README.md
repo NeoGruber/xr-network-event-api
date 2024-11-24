@@ -1,7 +1,7 @@
 # XR Meeting Platform API Documentation
 
 ## Base URL
-Github: [Neo Gruber](https://github.com/NeoGruber)
+Github: [xr-network-event-api](https://github.com/NeoGruber/xr-network-event-api)
 
 ## Endpoints
 
