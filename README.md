@@ -1,97 +1,86 @@
-# Game Scoreboard API
+# XR Meeting Platform API Documentation
 
-This is a simple Node.js application with a MySQL database to manage a scoreboard for a game. The application allows you to add, retrieve, and delete scores.
+## Base URL
+Github: [Neo Gruber](https://github.com/NeoGruber)
 
-## Prerequisites
+## Endpoints
 
-- Docker
-- Docker Compose
+### 1. **GET /**
+- **Description**: Returns a message to indicate the API is running.
+- **Response**:
+  - Status Code: `200 OK`
+  - Body: `"XR Meeting Platform API"`
 
-## Setup
+### 2. **GET /users**
+- **Description**: Retrieves a list of all users.
+- **Response**:
+  - Status Code: `200 OK`
+  - Body: An array of user objects, each containing:
+    - `OculusID`
+    - `OculusName`
+    - `Role`
+    - `NameTag`
+    - `NetworkState`
+    - `Muted`
+    - `Flag1`
+    - `Flag2`
+    - `Flag3`
 
-```sh
-git clone https://github.com/NeoGruber/game-scoreboard.git
-cd game-scoreboard
-docker-compose up -d --build
-```
+### 3. **GET /users/:OculusID**
+- **Description**: Retrieves a single user by their `OculusID`.
+- **Parameters**:
+  - `OculusID` (URL Parameter): The unique ID of the user.
+- **Response**:
+  - Status Code: `200 OK`
+  - Body: A user object containing:
+    - `OculusID`
+    - `OculusName`
+    - `Role`
+    - `NameTag`
+    - `NetworkState`
+    - `Muted`
+    - `Flag1`
+    - `Flag2`
+    - `Flag3`
+  - Status Code: `404 Not Found` if user does not exist.
 
-## API Endpoints
+### 4. **POST /users**
+- **Description**: Adds a new user to the database.
+- **Request Body**:
+  - `OculusID` (String): The unique ID for the user.
+  - `OculusName` (String): The name of the user in Oculus.
+  - `Role` (String): The role of the user.
+  - `NameTag` (String): The user's name tag.
+  - `NetworkState` (String): The user's network state.
+  - `Muted` (Boolean): Whether the user is muted.
+  - `Flag1`, `Flag2`, `Flag3` (Integer, optional, default: `0`): Flags associated with the user.
+- **Response**:
+  - Status Code: `201 Created`
+  - Body: `"User added successfully: OculusID"`
+  - Status Code: `400 Bad Request` if any required fields are missing.
 
-### Get All Scores
+### 5. **PATCH /users/:OculusID**
+- **Description**: Updates a user's details (network state, mute status, role, and flags).
+- **Parameters**:
+  - `OculusID` (URL Parameter): The unique ID of the user to update.
+- **Request Body** (any of the following fields are optional):
+  - `NetworkState` (String)
+  - `Muted` (Boolean)
+  - `Role` (String)
+  - `Flag1` (Integer)
+  - `Flag2` (Integer)
+  - `Flag3` (Integer)
+- **Response**:
+  - Status Code: `200 OK`
+  - Body: `"User updated successfully: OculusID"`
+  - Status Code: `400 Bad Request` if no valid fields are provided.
+  - Status Code: `404 Not Found` if user does not exist.
 
-URL: `/scores`
-
-Method: `GET`
-
-Description: Retrieves all scores sorted from best to worst.
-
-#### Response
-```json
-[
-  {
-    "id": 1,
-    "name": "player1",
-    "score": 100
-  },
-  {
-    "id": 2,
-    "name": "player2",
-    "score": 90
-  }
-]
-```
-
-### Add a New Score
-
-URL: `/scores`
-
-Method: `POST`
-
-Description: Adds a new score and returns all scores sorted from best to worst.
-
-#### Request Body
-```json
-{
-  "name": "player1",
-  "score": 100
-}
-```
-
-#### Response
-```json
-[
-  {
-    "id": 1,
-    "name": "player1",
-    "score": 100
-  },
-  {
-    "id": 2,
-    "name": "player2",
-    "score": 90
-  }
-]
-```
-
-### Delete Score
-
-URL: `/scores/:id`
-
-Method: `DELETE`
-
-Description: Deletes a score by its id and returns all scores sorted from best to worst.
-
-#### Request URL
-
-`/scores/1`
-
-#### Response
-```json
-[
-  {
-    "id": 2,
-    "name": "player2",
-    "score": 90
-  }
-]
-```
+### 6. **DELETE /users/:OculusID**
+- **Description**: Deletes a user by their `OculusID`.
+- **Parameters**:
+  - `OculusID` (URL Parameter): The unique ID of the user to delete.
+- **Response**:
+  - Status Code: `200 OK`
+  - Body: `"User deleted successfully: OculusID"`
+  - Status Code: `404 Not Found` if user does not exist.

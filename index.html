@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Management</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .user-list,
+      .user-form,
+      .update-form {
+        margin-bottom: 20px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      table,
+      th,
+      td {
+        border: 1px solid #ddd;
+      }
+      th,
+      td {
+        padding: 8px;
+        text-align: left;
+      }
+      input,
+      button {
+        margin: 5px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>User Management</h1>
+
+    <div class="user-list">
+      <h2>Users</h2>
+      <button onclick="fetchUsers()">Refresh Users</button>
+      <table>
+        <thead>
+          <tr>
+            <th>OculusID</th>
+            <th>OculusName</th>
+            <th>Role</th>
+            <th>NameTag</th>
+            <th>NetworkState</th>
+            <th>Muted</th>
+            <th>Flag1</th>
+            <th>Flag2</th>
+            <th>Flag3</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody"></tbody>
+      </table>
+    </div>
+
+    <div class="user-form">
+      <h2>Add User</h2>
+      <form onsubmit="addUser(event)">
+        <input type="text" id="OculusID" placeholder="OculusID" required />
+        <input type="text" id="OculusName" placeholder="OculusName" required />
+        <input type="text" id="Role" placeholder="Role" required />
+        <input type="text" id="NameTag" placeholder="NameTag" required />
+        <input
+          type="number"
+          id="NetworkState"
+          placeholder="NetworkState"
+          required
+        />
+        <input type="checkbox" id="Muted" /> Muted
+        <input type="number" id="Flag1" placeholder="Flag1" />
+        <input type="number" id="Flag2" placeholder="Flag2" />
+        <input type="number" id="Flag3" placeholder="Flag3" />
+        <button type="submit">Add User</button>
+      </form>
+    </div>
+
+    <div class="update-form">
+      <h2>Update User</h2>
+      <form onsubmit="updateUser(event)">
+        <input
+          type="text"
+          id="UpdateOculusID"
+          placeholder="OculusID (Required)"
+          required
+        />
+        <input type="text" id="UpdateRole" placeholder="Role" />
+        <input
+          type="number"
+          id="UpdateNetworkState"
+          placeholder="NetworkState"
+        />
+        <input type="checkbox" id="UpdateMuted" /> Muted
+        <input type="number" id="UpdateFlag1" placeholder="Flag1" />
+        <input type="number" id="UpdateFlag2" placeholder="Flag2" />
+        <input type="number" id="UpdateFlag3" placeholder="Flag3" />
+        <button type="submit">Update User</button>
+      </form>
+    </div>
+
+    <script>
+      const apiBase = "http://localhost:3000";
+
+      async function fetchUsers() {
+        try {
+          const response = await fetch(`${apiBase}/users`);
+          const users = await response.json();
+          const userTableBody = document.getElementById("userTableBody");
+          userTableBody.innerHTML = "";
+          users.forEach((user) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+            <td>${user.OculusID}</td>
+            <td>${user.OculusName}</td>
+            <td>${user.Role}</td>
+            <td>${user.NameTag}</td>
+            <td>${user.NetworkState}</td>
+            <td>${user.Muted}</td>
+            <td>${user.Flag1}</td>
+            <td>${user.Flag2}</td>
+            <td>${user.Flag3}</td>
+            <td>
+              <button onclick="deleteUser('${user.OculusID}')">Delete</button>
+            </td>
+          `;
+            userTableBody.appendChild(row);
+          });
+        } catch (err) {
+          console.error("Error fetching users:", err);
+        }
+      }
+
+      async function addUser(event) {
+        event.preventDefault();
+        const OculusID = document.getElementById("OculusID").value;
+        const OculusName = document.getElementById("OculusName").value;
+        const Role = document.getElementById("Role").value;
+        const NameTag = document.getElementById("NameTag").value;
+        const NetworkState = parseInt(
+          document.getElementById("NetworkState").value,
+        );
+        const Muted = document.getElementById("Muted").checked ? 1 : 0;
+        const Flag1 = parseInt(document.getElementById("Flag1").value) || 0;
+        const Flag2 = parseInt(document.getElementById("Flag2").value) || 0;
+        const Flag3 = parseInt(document.getElementById("Flag3").value) || 0;
+
+        try {
+          const response = await fetch(`${apiBase}/users`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              OculusID,
+              OculusName,
+              Role,
+              NameTag,
+              NetworkState,
+              Muted,
+              Flag1,
+              Flag2,
+              Flag3,
+            }),
+          });
+          if (response.ok) {
+            alert("User added successfully!");
+            location.reload(); // Reload the page
+          } else {
+            const error = await response.json();
+            alert("Error adding user: " + error.message);
+          }
+        } catch (err) {
+          console.error("Error adding user:", err);
+        }
+      }
+
+      async function updateUser(event) {
+        event.preventDefault();
+        const OculusID = document.getElementById("UpdateOculusID").value;
+        const Role = document.getElementById("UpdateRole").value || undefined;
+        const NetworkState =
+          document.getElementById("UpdateNetworkState").value || undefined;
+        const Muted = document.getElementById("UpdateMuted").checked
+          ? 1
+          : undefined;
+        const Flag1 = document.getElementById("UpdateFlag1").value || undefined;
+        const Flag2 = document.getElementById("UpdateFlag2").value || undefined;
+        const Flag3 = document.getElementById("UpdateFlag3").value || undefined;
+
+        const updates = { Role, NetworkState, Muted, Flag1, Flag2, Flag3 };
+        for (const key in updates) {
+          if (updates[key] === undefined) delete updates[key];
+        }
+
+        try {
+          const response = await fetch(`${apiBase}/users/${OculusID}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updates),
+          });
+          if (response.ok) {
+            alert("User updated successfully!");
+            location.reload(); // Reload the page
+          } else {
+            const error = await response.json();
+            alert("Error updating user: " + error.message);
+          }
+        } catch (err) {
+          console.error("Error updating user:", err);
+        }
+      }
+
+      async function deleteUser(OculusID) {
+        try {
+          const response = await fetch(`${apiBase}/users/${OculusID}`, {
+            method: "DELETE",
+          });
+          if (response.ok) {
+            alert("User deleted successfully!");
+            location.reload(); // Reload the page
+          } else {
+            alert("Error deleting user");
+          }
+        } catch (err) {
+          console.error("Error deleting user:", err);
+        }
+      }
+
+      fetchUsers();
+    </script>
+  </body>
+</html>

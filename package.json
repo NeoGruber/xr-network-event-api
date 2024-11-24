@@ -19,6 +19,7 @@
     "homepage": "https://github.com/NeoGruber/game-scoreboard#readme",
     "dependencies": {
         "express.js": "^1.0.0",
+        "marked": "^15.0.2",
         "mysql2": "^3.11.0"
     },
     "devDependencies": {

@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 services:
   app:
     build: .
@@ -13,7 +13,7 @@ services:
       DB_NAME: mydatabase
 
   db:
-    image: mysql:9.0.1
+    image: docker.io/mysql:9.0.1
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: mydatabase
