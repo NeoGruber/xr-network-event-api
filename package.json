@@ -1,0 +1,31 @@
+{
+    "name": "game-scoreboard",
+    "version": "1.0.0",
+    "description": "",
+    "type": "module",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/NeoGruber/game-scoreboard.git"
+    },
+    "author": "Neo Gruber",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/NeoGruber/game-scoreboard/issues"
+    },
+    "homepage": "https://github.com/NeoGruber/game-scoreboard#readme",
+    "dependencies": {
+        "express.js": "^1.0.0",
+        "mysql2": "^3.11.0"
+    },
+    "devDependencies": {
+        "eslint": "^9.8.0",
+        "eslint-config-prettier": "^9.1.0",
+        "eslint-plugin-prettier": "^5.2.1",
+        "globals": "^15.9.0",
+        "prettier": "^3.3.3"
+    }
+}
