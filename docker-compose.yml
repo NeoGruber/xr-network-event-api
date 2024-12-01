@@ -2,6 +2,7 @@ version: "3.8"
 services:
   app:
     build: .
+    restart: always
     ports:
       - "3000:3000"
     depends_on:
@@ -14,6 +15,7 @@ services:
 
   db:
     image: docker.io/mysql:9.0.1
+    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: mydatabase
