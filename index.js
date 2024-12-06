@@ -4,7 +4,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import mysql from "mysql2";
 import { marked } from "marked";
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -64,10 +63,8 @@ function startServer(connection) {
         return res.status(500).send("Error reading README file.");
       }
 
-      // Convert Markdown to HTML using `marked`
       const htmlContent = marked(data);
 
-      // Wrap the HTML content in a basic template
       res.send(`
         <!DOCTYPE html>
         <html lang="en">
@@ -148,6 +145,7 @@ function startServer(connection) {
       Flag1 = 0,
       Flag2 = 0,
       Flag3 = 0,
+      LocationID,
     } = req.body;
     if (
       !OculusID ||
@@ -155,13 +153,14 @@ function startServer(connection) {
       Role === undefined ||
       !NameTag ||
       NetworkState === undefined ||
-      Muted === undefined
+      Muted === undefined ||
+      LocationID === undefined
     ) {
       return res.status(400).send("Invalid input");
     }
     queryDatabase(
       connection,
-      "INSERT INTO users (OculusID, OculusName, Role, NameTag, NetworkState, Muted, Flag1, Flag2, Flag3) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO users (OculusID, OculusName, Role, NameTag, NetworkState, Muted, Flag1, Flag2, Flag3, LocationID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
         OculusID,
         OculusName,
@@ -172,6 +171,7 @@ function startServer(connection) {
         Flag1,
         Flag2,
         Flag3,
+        LocationID,
       ],
       res,
       function () {
@@ -183,14 +183,16 @@ function startServer(connection) {
   // Update a user's network state or muted status
   app.patch("/users/:OculusID", function (req, res) {
     const { OculusID } = req.params;
-    const { NetworkState, Muted, Role, Flag1, Flag2, Flag3 } = req.body;
+    const { NetworkState, Muted, Role, Flag1, Flag2, Flag3, LocationID } =
+      req.body;
     if (
       NetworkState === undefined &&
       Muted === undefined &&
       Role === undefined &&
       Flag1 === undefined &&
       Flag2 === undefined &&
-      Flag3 === undefined
+      Flag3 === undefined &&
+      LocationID === undefined
     ) {
       return res.status(400).send("No valid fields to update");
     }
@@ -221,6 +223,10 @@ function startServer(connection) {
       fields.push("Flag3 = ?");
       values.push(Flag3);
     }
+    if (LocationID !== undefined) {
+      fields.push("LocationID = ?");
+      values.push(LocationID);
+    }
 
     values.push(OculusID);
     queryDatabase(
@@ -250,6 +256,52 @@ function startServer(connection) {
           return res.status(404).send("User not found");
         }
         res.send(`User deleted successfully: ${OculusID}`);
+      },
+    );
+  });
+
+  app.post("/locations", function (req, res) {
+    const { City, Location } = req.body;
+
+    if (!City || !Location) {
+      return res.status(400).send("Invalid input");
+    }
+
+    queryDatabase(
+      connection,
+      "INSERT INTO locations (City, Location) VALUES (?, ?)",
+      [City, Location],
+      res,
+      function () {
+        res.status(201).send(`location added succesfully`);
+      },
+    );
+  });
+
+  app.get("/locations", function (req, res) {
+    queryDatabase(
+      connection,
+      "SELECT * FROM locations",
+      [],
+      res,
+      function (results) {
+        res.json(results);
+      },
+    );
+  });
+
+  app.delete("/locations/:ID", function (req, res) {
+    const { ID } = req.params;
+    queryDatabase(
+      connection,
+      "DELETE FROM locations WHERE LocationID = ?",
+      [ID],
+      res,
+      function (results) {
+        if (results.affectedRows === 0) {
+          return res.status(404).send("Location not found");
+        }
+        res.send(`Location deleted successfully: ${ID}`);
       },
     );
   });

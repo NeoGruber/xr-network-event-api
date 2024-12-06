@@ -1,86 +1,189 @@
-# XR Meeting Platform API Documentation
+# XR Meeting Platform API
 
-## Base URL
-Github: [xr-network-event-api](https://github.com/NeoGruber/xr-network-event-api)
+This document provides an overview of the XR Meeting Platform API, which enables the management of users and locations for an extended reality (XR) meeting platform.
 
-## Endpoints
+---
 
-### 1. **GET /**
-- **Description**: Returns a message to indicate the API is running.
-- **Response**:
-  - Status Code: `200 OK`
-  - Body: `"XR Meeting Platform API"`
+## Table of Contents
 
-### 2. **GET /users**
-- **Description**: Retrieves a list of all users.
-- **Response**:
-  - Status Code: `200 OK`
-  - Body: An array of user objects, each containing:
-    - `OculusID`
-    - `OculusName`
-    - `Role`
-    - `NameTag`
-    - `NetworkState`
-    - `Muted`
-    - `Flag1`
-    - `Flag2`
-    - `Flag3`
+- [Setup](#setup)
+- [Environment Variables](#environment-variables)
+- [API Endpoints](#api-endpoints)
+  - [General](#general)
+  - [Users](#users)
+  - [Locations](#locations)
+- [Database Schema](#database-schema)
+- [Usage](#usage)
 
-### 3. **GET /users/:OculusID**
-- **Description**: Retrieves a single user by their `OculusID`.
-- **Parameters**:
-  - `OculusID` (URL Parameter): The unique ID of the user.
-- **Response**:
-  - Status Code: `200 OK`
-  - Body: A user object containing:
-    - `OculusID`
-    - `OculusName`
-    - `Role`
-    - `NameTag`
-    - `NetworkState`
-    - `Muted`
-    - `Flag1`
-    - `Flag2`
-    - `Flag3`
-  - Status Code: `404 Not Found` if user does not exist.
+---
 
-### 4. **POST /users**
-- **Description**: Adds a new user to the database.
-- **Request Body**:
-  - `OculusID` (String): The unique ID for the user.
-  - `OculusName` (String): The name of the user in Oculus.
-  - `Role` (String): The role of the user.
-  - `NameTag` (String): The user's name tag.
-  - `NetworkState` (String): The user's network state.
-  - `Muted` (Boolean): Whether the user is muted.
-  - `Flag1`, `Flag2`, `Flag3` (Integer, optional, default: `0`): Flags associated with the user.
-- **Response**:
-  - Status Code: `201 Created`
-  - Body: `"User added successfully: OculusID"`
-  - Status Code: `400 Bad Request` if any required fields are missing.
+## Setup
 
-### 5. **PATCH /users/:OculusID**
-- **Description**: Updates a user's details (network state, mute status, role, and flags).
-- **Parameters**:
-  - `OculusID` (URL Parameter): The unique ID of the user to update.
-- **Request Body** (any of the following fields are optional):
-  - `NetworkState` (String)
-  - `Muted` (Boolean)
-  - `Role` (String)
-  - `Flag1` (Integer)
-  - `Flag2` (Integer)
-  - `Flag3` (Integer)
-- **Response**:
-  - Status Code: `200 OK`
-  - Body: `"User updated successfully: OculusID"`
-  - Status Code: `400 Bad Request` if no valid fields are provided.
-  - Status Code: `404 Not Found` if user does not exist.
+### Prerequisites
 
-### 6. **DELETE /users/:OculusID**
-- **Description**: Deletes a user by their `OculusID`.
-- **Parameters**:
-  - `OculusID` (URL Parameter): The unique ID of the user to delete.
-- **Response**:
-  - Status Code: `200 OK`
-  - Body: `"User deleted successfully: OculusID"`
-  - Status Code: `404 Not Found` if user does not exist.
+- Node.js (v16+ recommended)
+- MySQL database
+
+### Installation
+
+1. Clone the repository.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create a `.env` file in the root directory and configure your database credentials (see [Environment Variables](#environment-variables)).
+4. Start the server:
+   ```bash
+   node index.js
+   ```
+5. The API will be available at `http://localhost:3000`.
+
+---
+
+## Environment Variables
+
+The following environment variables are required for database connection:
+
+- `DB_HOST`: The host of your MySQL database.
+- `DB_USER`: The username for the database.
+- `DB_PASS`: The password for the database.
+- `DB_NAME`: The name of the database.
+
+Example `.env` file:
+```env
+DB_HOST=localhost
+DB_USER=root
+DB_PASS=yourpassword
+DB_NAME=xr_meeting
+```
+
+---
+
+## API Endpoints
+
+### General
+
+- `GET /`
+  - **Description:** Welcome message for the API.
+
+- `GET /readme`
+  - **Description:** Displays the README in HTML format.
+
+- `GET /web`
+  - **Description:** Serves a static HTML page (`index.html`).
+
+### Users
+
+#### Get All Users
+- `GET /users`
+  - **Description:** Retrieves all users.
+  - **Response:** Array of user objects.
+
+#### Get User by OculusID
+- `GET /users/:OculusID`
+  - **Description:** Retrieves a user by their `OculusID`.
+  - **Parameters:**
+    - `OculusID`: Unique ID of the user.
+
+#### Add a New User
+- `POST /users`
+  - **Description:** Adds a new user.
+  - **Request Body:**
+    ```json
+    {
+      "OculusID": "string",
+      "OculusName": "string",
+      "Role": 0,
+      "NameTag": "string",
+      "NetworkState": 0,
+      "Muted": 0,
+      "Flag1": 0,
+      "Flag2": 0,
+      "Flag3": 0,
+      "LocationID": "integer"
+    }
+    ```
+
+#### Update User
+- `PATCH /users/:OculusID`
+  - **Description:** Updates a user's fields (e.g., `NetworkState`, `Muted`).
+  - **Parameters:**
+    - `OculusID`: Unique ID of the user.
+  - **Request Body:** Any combination of:
+    ```json
+    {
+      "NetworkState": 1,
+      "Muted": 0,
+      "Role": 1,
+      "Flag1": 1,
+      "Flag2": 1,
+      "Flag3": 1,
+      "LocationID": 5
+    }
+    ```
+
+#### Delete User
+- `DELETE /users/:OculusID`
+  - **Description:** Deletes a user by their `OculusID`.
+  - **Parameters:**
+    - `OculusID`: Unique ID of the user.
+
+### Locations
+
+#### Get All Locations
+- `GET /locations`
+  - **Description:** Retrieves all locations.
+
+#### Add a New Location
+- `POST /locations`
+  - **Description:** Adds a new location.
+  - **Request Body:**
+    ```json
+    {
+      "City": "string",
+      "Location": "string"
+    }
+    ```
+
+#### Delete Location
+- `DELETE /locations/:ID`
+  - **Description:** Deletes a location by its ID.
+  - **Parameters:**
+    - `ID`: Unique ID of the location.
+
+---
+
+## Database Schema
+
+### `users` Table
+| Column        | Type    | Description                 |
+|---------------|---------|-----------------------------|
+| `OculusID`    | VARCHAR | Unique ID for the user.     |
+| `OculusName`  | VARCHAR | Oculus username.            |
+| `Role`        | INT     | Role identifier (e.g., 0=guest). |
+| `NameTag`     | VARCHAR | Display name tag.           |
+| `NetworkState`| INT     | Network connection status.  |
+| `Muted`       | INT     | Mute status (0/1).          |
+| `Flag1`       | INT     | Custom flag.                |
+| `Flag2`       | INT     | Custom flag.                |
+| `Flag3`       | INT     | Custom flag.                |
+| `LocationID`  | INT     | Associated location ID.     |
+
+### `locations` Table
+| Column        | Type    | Description                 |
+|---------------|---------|-----------------------------|
+| `LocationID`  | INT     | Unique ID for the location. |
+| `City`        | VARCHAR | Name of the city.           |
+| `Location`    | VARCHAR | Detailed location name.     |
+
+---
+
+## Usage
+
+- Start the API and ensure the database is running.
+- Use tools like [Postman](https://www.postman.com/) or [curl](https://curl.se/) to interact with the endpoints.
+- Validate the input and responses against the expected schema provided in this README.
+
+---
+
+For additional support or questions, please contact the project maintainer.
