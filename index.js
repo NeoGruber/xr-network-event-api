@@ -11,33 +11,53 @@ const app = express();
 const port = 3000;
 app.use(express.json());
 
-// Utility: Create a database connection
+let connection;
+
 function createConnection() {
-  return mysql.createConnection({
+  const conn = mysql.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
   });
+
+  // Handle lost connection
+  conn.on("error", function (err) {
+    if (err.code === "PROTOCOL_CONNECTION_LOST") {
+      console.error("Database connection lost. Reconnecting...");
+      attemptConnection(); // Retry connection on disconnect
+    } else {
+      console.error("Database error:", err.stack);
+      process.exit(1); // Exit for non-recoverable errors
+    }
+  });
+
+  return conn;
 }
 
-// Utility: Retry database connection
 function attemptConnection(retries = 5, delay = 3000) {
-  const connection = createConnection();
+  if (connection) {
+    connection.destroy(); // Clean up the old connection
+  }
+
+  connection = createConnection();
+
   connection.connect(function (err) {
     if (!err) {
-      return startServer(connection);
+      console.log("Connected to the database!");
+      startServer(connection); // Start server on successful connection
+      return;
     }
+
     if (retries === 0) {
       console.error("Failed to connect to the database:", err.stack);
       process.exit(1);
     }
+
     console.error(
       `Retrying connection in ${delay / 1000}s... (${retries} retries left)`,
     );
-    setTimeout(function () {
-      attemptConnection(retries - 1, delay);
-    }, delay);
+    setTimeout(() => attemptConnection(retries - 1, delay), delay);
   });
 }
 
@@ -120,7 +140,7 @@ function startServer(connection) {
   });
 
   //Get a single user
-  app.get("/users/:OculusID", function (_, res) {
+  app.get("/users/:OculusID", function (req, res) {
     const { OculusID } = req.params;
     queryDatabase(
       connection,
@@ -175,7 +195,15 @@ function startServer(connection) {
       ],
       res,
       function () {
-        res.status(201).send(`User added successfully: ${OculusID}`);
+        queryDatabase(
+          connection,
+          "SELECT * FROM users WHERE OculusID = ?",
+          [OculusID],
+          res,
+          function (results) {
+            res.status(201).json(results);
+          },
+        );
       },
     );
   });
@@ -238,7 +266,15 @@ function startServer(connection) {
         if (results.affectedRows === 0) {
           return res.status(404).send("User not found");
         }
-        res.send(`User updated successfully: ${OculusID}`);
+        queryDatabase(
+          connection,
+          "SELECT * FROM users WHERE OculusID = ?",
+          [OculusID],
+          res,
+          function (results) {
+            res.status(200).json(results);
+          },
+        );
       },
     );
   });
@@ -255,7 +291,7 @@ function startServer(connection) {
         if (results.affectedRows === 0) {
           return res.status(404).send("User not found");
         }
-        res.send(`User deleted successfully: ${OculusID}`);
+        res.status(200).send(`User deleted successfully: ${OculusID}`);
       },
     );
   });
@@ -273,7 +309,15 @@ function startServer(connection) {
       [City, Location],
       res,
       function () {
-        res.status(201).send(`location added succesfully`);
+        queryDatabase(
+          connection,
+          "SELECT * FROM locations",
+          [],
+          res,
+          function (results) {
+            res.status(201).json(results);
+          },
+        );
       },
     );
   });
@@ -301,7 +345,7 @@ function startServer(connection) {
         if (results.affectedRows === 0) {
           return res.status(404).send("Location not found");
         }
-        res.send(`Location deleted successfully: ${ID}`);
+        res.status(200).send(`Location deleted successfully: ${ID}`);
       },
     );
   });
