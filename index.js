@@ -141,14 +141,25 @@ function startServer(connection) {
 
   //Get a single user
   app.get("/users/:OculusID", function (req, res) {
-    const { OculusID } = req.params;
+    const OculusID = BigInt(req.params.OculusID); // Convert the OculusID to BigInt
+
     queryDatabase(
       connection,
       "SELECT * FROM users WHERE OculusID = ?",
-      [OculusID],
+      [OculusID.toString()], // Pass BigInt as a string to the database
       res,
       function (results) {
-        res.json(results);
+        if (results.length === 0) {
+          return res.status(404).send("User not found");
+        }
+
+        // Convert OculusID back to string in the response
+        const adjustedResults = results.map((user) => ({
+          ...user,
+          OculusID: user.OculusID.toString(),
+        }));
+
+        res.json(adjustedResults);
       },
     );
   });
@@ -156,7 +167,6 @@ function startServer(connection) {
   // Add a new user
   app.post("/users", function (req, res) {
     const {
-      OculusID,
       OculusName,
       Role,
       NameTag,
@@ -167,6 +177,10 @@ function startServer(connection) {
       Flag3 = 0,
       LocationID,
     } = req.body;
+
+    const OculusID = BigInt(req.body.OculusID);
+
+    // Input validation
     if (
       !OculusID ||
       !OculusName ||
@@ -178,11 +192,14 @@ function startServer(connection) {
     ) {
       return res.status(400).send("Invalid input");
     }
+
+    const OculusIDBigInt = BigInt(OculusID); // Convert OculusID to BigInt
+
     queryDatabase(
       connection,
       "INSERT INTO users (OculusID, OculusName, Role, NameTag, NetworkState, Muted, Flag1, Flag2, Flag3, LocationID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
-        OculusID,
+        OculusIDBigInt.toString(), // Pass BigInt as a string to the database
         OculusName,
         Role,
         NameTag,
@@ -198,10 +215,15 @@ function startServer(connection) {
         queryDatabase(
           connection,
           "SELECT * FROM users WHERE OculusID = ?",
-          [OculusID],
+          [OculusIDBigInt.toString()], // Query using BigInt as a string
           res,
           function (results) {
-            res.status(201).json(results);
+            // Convert OculusID back to string in the response
+            const adjustedResults = results.map((user) => ({
+              ...user,
+              OculusID: user.OculusID.toString(),
+            }));
+            res.status(201).json(adjustedResults);
           },
         );
       },
@@ -210,9 +232,21 @@ function startServer(connection) {
 
   // Update a user's network state or muted status
   app.patch("/users/:OculusID", function (req, res) {
-    const { OculusID } = req.params;
+    let OculusID;
+
+    // Convert OculusID from params to BigInt
+    try {
+      OculusID = BigInt(req.params.OculusID);
+    } catch (error) {
+      return res
+        .status(400)
+        .send("Invalid OculusID format, must be a numeric value");
+    }
+
     const { NetworkState, Muted, Role, Flag1, Flag2, Flag3, LocationID } =
       req.body;
+
+    // Ensure at least one field is being updated
     if (
       NetworkState === undefined &&
       Muted === undefined &&
@@ -227,6 +261,7 @@ function startServer(connection) {
 
     const fields = [];
     const values = [];
+
     if (NetworkState !== undefined) {
       fields.push("NetworkState = ?");
       values.push(NetworkState);
@@ -256,7 +291,9 @@ function startServer(connection) {
       values.push(LocationID);
     }
 
-    values.push(OculusID);
+    values.push(OculusID.toString()); // Add OculusID as string for the query
+
+    // Update user in the database
     queryDatabase(
       connection,
       `UPDATE users SET ${fields.join(", ")} WHERE OculusID = ?`,
@@ -266,13 +303,20 @@ function startServer(connection) {
         if (results.affectedRows === 0) {
           return res.status(404).send("User not found");
         }
+
+        // Fetch the updated user
         queryDatabase(
           connection,
           "SELECT * FROM users WHERE OculusID = ?",
-          [OculusID],
+          [OculusID.toString()],
           res,
           function (results) {
-            res.status(200).json(results);
+            // Convert OculusID back to string in the response
+            const adjustedResults = results.map((user) => ({
+              ...user,
+              OculusID: user.OculusID.toString(),
+            }));
+            res.status(200).json(adjustedResults);
           },
         );
       },
@@ -281,17 +325,30 @@ function startServer(connection) {
 
   // Delete a user
   app.delete("/users/:OculusID", function (req, res) {
-    const { OculusID } = req.params;
+    let OculusID;
+
+    // Convert OculusID from params to BigInt
+    try {
+      OculusID = BigInt(req.params.OculusID);
+    } catch (error) {
+      return res
+        .status(400)
+        .send("Invalid OculusID format, must be a numeric value");
+    }
+
+    // Delete user from the database
     queryDatabase(
       connection,
       "DELETE FROM users WHERE OculusID = ?",
-      [OculusID],
+      [OculusID.toString()], // Pass BigInt as a string to the query
       res,
       function (results) {
         if (results.affectedRows === 0) {
           return res.status(404).send("User not found");
         }
-        res.status(200).send(`User deleted successfully: ${OculusID}`);
+        res
+          .status(200)
+          .send(`User deleted successfully: ${OculusID.toString()}`);
       },
     );
   });
